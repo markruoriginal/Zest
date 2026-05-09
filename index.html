@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>ZestAI-V1.6 | Бесплатный доступ</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #0A0A0A;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            color: #FFFFFF;
+            padding: 0;
+            padding-bottom: 80px;
+        }
+
+        /* Чёрный хедер как на скрине */
+        .header {
+            background-color: #0A0A0A;
+            padding: 24px 20px 16px 20px;
+            border-bottom: 1px solid #2C2C2E;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #FFFFFF, #AAAAAA);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: -0.5px;
+        }
+        .header p {
+            font-size: 13px;
+            color: #8E8E93;
+            margin-top: 6px;
+        }
+
+        /* Панель таймера и админ-кнопка */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin: 16px 16px 12px 16px;
+        }
+        .timer-bar {
+            flex: 2;
+            background-color: #1C1C1E;
+            padding: 10px 14px;
+            border-radius: 14px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #E5E5EA;
+            text-align: center;
+            backdrop-filter: blur(4px);
+            border: 0.5px solid #2C2C2E;
+        }
+        .timer-warning {
+            color: #FF453A;
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.6;
+            }
+            100% {
+                opacity: 1;
+            }
+        }
+        .admin-btn {
+            background-color: #2C2C2E;
+            color: #FFD60A;
+            border: none;
+            border-radius: 30px;
+            padding: 8px 18px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .admin-btn:active {
+            background-color: #3A3A3C;
+            transform: scale(0.96);
+        }
+
+        /* Чат-контейнер */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin: 0 16px 16px 16px;
+            max-height: calc(100vh - 210px);
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        /* Сообщения */
+        .message {
+            padding: 12px 16px;
+            border-radius: 22px;
+            max-width: 85%;
+            word-wrap: break-word;
+            font-size: 15px;
+            line-height: 1.4;
+            animation: fadeIn 0.2s ease;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(6px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .user {
+            background-color: #2C6E2F;
+            /* тёмно-зелёный, как акцент на скрине */
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 6px;
+        }
+        .bot {
+            background-color: #1C1C1E;
+            color: #E5E5EA;
+            align-self: flex-start;
+            border-bottom-left-radius: 6px;
+            border: 0.5px solid #2C2C2E;
+        }
+
+        /* Индикатор печати */
+        .typing-indicator {
+            background-color: #1C1C1E;
+            padding: 10px 16px;
+            border-radius: 22px;
+            align-self: flex-start;
+            display: inline-flex;
+            gap: 6px;
+            align-items: center;
+            border: 0.5px solid #2C2C2E;
+        }
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #8E8E93;
+            border-radius: 50%;
+            animation: typingAnim 1.4s infinite ease-in-out;
+        }
+        .typing-dot:nth-child(1) {
+            animation-delay: 0s;
+        }
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        @keyframes typingAnim {
+            0%,
+            60%,
+            100% {
+                transform: translateY(0);
+                opacity: 0.4;
+            }
+            30% {
+                transform: translateY(-6px);
+                opacity: 1;
+            }
+        }
+
+        /* Квота сообщений */
+        .quota {
+            font-size: 12px;
+            text-align: center;
+            margin: 8px 16px;
+            color: #8E8E93;
+            background-color: #1C1C1E;
+            padding: 6px 12px;
+            border-radius: 20px;
+            width: fit-content;
+            align-self: center;
+        }
+
+        /* Поле ввода */
+        .input-area {
+            display: flex;
+            gap: 10px;
+            margin-top: 8px;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: #0A0A0A;
+            padding: 12px 16px;
+            border-top: 1px solid #2C2C2E;
+            backdrop-filter: blur(12px);
+        }
+        input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid #2C2C2E;
+            border-radius: 30px;
+            background-color: #1C1C1E;
+            color: #FFFFFF;
+            font-size: 16px;
+            outline: none;
+        }
+        input:focus {
+            border-color: #2C6E2F;
+        }
+        input::placeholder {
+            color: #8E8E93;
+        }
+        button {
+            padding: 12px 24px;
+            background-color: #2C6E2F;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        button:active {
+            transform: scale(0.96);
+            background-color: #1E4A1F;
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Код */
+        pre {
+            background: #0D0D0F;
+            color: #E5E5EA;
+            padding: 10px;
+            border-radius: 14px;
+            overflow-x: auto;
+            font-size: 12px;
+            margin: 6px 0;
+            border: 0.5px solid #2C2C2E;
+        }
+        code {
+            font-family: monospace;
+        }
+        .bot strong {
+            color: #FFD60A;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>ZestAI-V1.6</h1>
+        <p>Бесплатный доступ</p>
+    </div>
+    <div class="top-bar">
+        <div id="timerDisplay" class="timer-bar">⏳ Доступ остался: 1 ч 0 мин</div>
+        <button id="adminButton" class="admin-btn">👑VIP</button>
+    </div>
+    <div class="chat-container" id="chat"></div>
+    <div id="quotaDisplay" class="quota">🎫 Лимит сообщений: 30/30</div>
+    <div class="input-area">
+        <input type="text" id="messageInput" placeholder="Спроси DeepSeek...">
+        <button id="sendBtn">➤</button>
+    </div>
+
+    <script>
+        // ========== НАСТРОЙКИ ==========
+        const QUOTA_PER_DAY = 30;
+        const FREE_HOURS = 1;
+        const ADMIN_PASSWORD = "vip-key";
+
+        let usedToday = parseInt(localStorage.getItem(getTodayKey())) || 0;
+        let timeLeft = FREE_HOURS * 3600;
+        let timerActive = true;
+        let timerInterval;
+        let isAdmin = false;
+
+        // Контекст диалога (последние сообщения пользователя)
+        let dialogueContext = {
+            lastUserMessage: '',
+            lastBotMessage: '',
+            userName: '',
+            conversationLength: 0,
+            topics: []
+        };
+
+        const chatDiv = document.getElementById('chat');
+        const inputField = document.getElementById('messageInput');
+        const sendButton = document.getElementById('sendBtn');
+        const timerDisplay = document.getElementById('timerDisplay');
+        const quotaDisplay = document.getElementById('quotaDisplay');
+        const adminBtn = document.getElementById('adminButton');
+
+        function getTodayKey() { return `deep_quota_${new Date().toDateString()}`; }
+
+        function getTimerKey() { return 'deep_timer_end'; }
+
+        function saveAdminStatus() { localStorage.setItem('deep_admin', isAdmin ? 'true' : 'false'); }
+
+        function loadAdminStatus() {
+            if (localStorage.getItem('deep_admin') === 'true') {
+                isAdmin = true;
+                updateQuotaDisplay();
+                addBotMessage("🔓VIP-режим активен. Лимит сообщений ∞.");
+            }
+        }
+
+        function updateQuotaDisplay() {
+            if (isAdmin) {
+                quotaDisplay.innerHTML = `👑 VIP-режим | Сообщения: ∞`;
+                quotaDisplay.style.color = '#FFD60A';
+                quotaDisplay.style.border = '1px solid #FFD60A';
+                return;
+            }
+            const remaining = QUOTA_PER_DAY - usedToday;
+            quotaDisplay.innerHTML = `🎫 Осталось сообщений сегодня: ${remaining} из ${QUOTA_PER_DAY}`;
+            quotaDisplay.style.color = '#8E8E93';
+            quotaDisplay.style.border = 'none';
+        }
+
+        function checkQuota() {
+            if (isAdmin) return true;
+            if (usedToday >= QUOTA_PER_DAY) {
+                addBotMessage("❌ Лимит сообщений на сегодня исчерпан. Активируй VIP-режим или жди завтра.");
+                return false;
+            }
+            return true;
+        }
+
+        function incrementQuota() {
+            if (!isAdmin) {
+                usedToday++;
+                localStorage.setItem(getTodayKey(), usedToday.toString());
+                updateQuotaDisplay();
+            }
+        }
+
+        function initTimer() {
+            const saved = localStorage.getItem(getTimerKey());
+            const now = Math.floor(Date.now() / 1000);
+            if (saved && now < parseInt(saved)) {
+                timeLeft = parseInt(saved) - now;
+                timerActive = true;
+            } else {
+                timeLeft = FREE_HOURS * 3600;
+                localStorage.setItem(getTimerKey(), (now + timeLeft).toString());
+                timerActive = true;
+            }
+            if (timeLeft <= 0) lockChat("Время сеанса истекло.");
+            else startTimerUI();
+        }
+
+        function startTimerUI() {
+            updateTimerDisplay();
+            timerInterval = setInterval(() => {
+                if (timeLeft <= 1) lockChat("Час общения закончился.");
+                else {
+                    timeLeft--;
+                    localStorage.setItem(getTimerKey(), (Math.floor(Date.now() / 1000) + timeLeft).toString());
+                    updateTimerDisplay();
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            let h = Math.floor(timeLeft / 3600),
+                m = Math.floor((timeLeft % 3600) / 60),
+                s = timeLeft % 60;
+            let txt = h > 0 ? `${h} ч ${m} мин` : (m > 0 ? `${m} мин ${s} сек` : `${s} сек`);
+            timerDisplay.innerHTML = `⏳ Доступ остался: ${txt}`;
+            if (timeLeft <= 600) timerDisplay.classList.add('timer-warning');
+            else timerDisplay.classList.remove('timer-warning');
+        }
+
+        function lockChat(reason) {
+            if (!timerActive) return;
+            timerActive = false;
+            clearInterval(timerInterval);
+            inputField.disabled = true;
+            sendButton.disabled = true;
+            inputField.placeholder = '🔒 Чат заблокирован';
+            addBotMessage(`⛔ ${reason}`);
+            localStorage.setItem(getTimerKey(), '0');
+            timerDisplay.innerHTML = '🔒 Доступ ограничен';
+        }
+
+        function resetAdminRestrictions() {
+            if (!isAdmin) {
+                isAdmin = true;
+                saveAdminStatus();
+                updateQuotaDisplay();
+            }
+            timeLeft = FREE_HOURS * 3600;
+            timerActive = true;
+            const now = Math.floor(Date.now() / 1000);
+            localStorage.setItem(getTimerKey(), (now + timeLeft).toString());
+            if (timerInterval) clearInterval(timerInterval);
+            startTimerUI();
+            addBotMessage("🔓 Вы перешли по реферальной ссылке: VIP-режим активирован! +1 час и безлимитные сообщения.");
+        }
+
+        // ========== ГЕНЕРАЦИЯ КОДА (расширенная) ==========
+        function generateCodeFromPrompt(promptText) {
+            const lower = promptText.toLowerCase();
+
+            // Python
+            if (lower.includes('rm') || (lower.includes('удалить') && lower.includes('файл'))) {
+                return `# ⚠️ Удаление файлов (с осторожностью)\nimport os\nf = input("Имя файла: ")\nif os.path.exists(f):\n    os.remove(f)\n    print(f"Удалён {f}")\nelse:\n    print("Файл не найден")`;
+            }
+            if (lower.includes('print')) {
+                return `# Простой print\nprint("Привет, мир!")\nname = input("Ваше имя: ")\nprint(f"Привет, {name}!")`;
+            }
+            if ((lower.includes('цикл') || lower.includes('for')) && !lower.includes('while')) {
+                return `# Цикл for\nfor i in range(1, 11):\n    print(i)\n\n# Сумма от 1 до N\nn = int(input("N: "))\nprint(sum(range(1, n+1)))`;
+            }
+            if (lower.includes('while')) {
+                return `# Цикл while\ni = 0\nwhile i < 5:\n    print(i)\n    i += 1`;
+            }
+            if (lower.includes('функция') || lower.includes('def')) {
+                return `# Функция\ndef double(x):\n    return x * 2\n\nnum = int(input("Число: "))\nprint(double(num))`;
+            }
+            if (lower.includes('список') || lower.includes('list')) {
+                return `# Список\nnums = [10, 20, 30, 40]\nprint("Список:", nums)\nnums.append(50)\nprint("Сумма:", sum(nums))`;
+            }
+            if (lower.includes('словарь') || lower.includes('dict')) {
+                return `# Словарь\ndata = {"яблоко": 5, "банан": 3}\nprint(data)\ndata["апельсин"] = 7\nprint(data)`;
+            }
+            if (lower.includes('класс') || lower.includes('ооп')) {
+                return `# Класс\nclass Animal:\n    def __init__(self, name):\n        self.name = name\n    def speak(self):\n        return f"{self.name} говорит!"\n\ndog = Animal("Шарик")\nprint(dog.speak())`;
+            }
+            if (lower.includes('сортировк') || lower.includes('sort')) {
+                return `# Сортировка\narr = [64, 34, 25, 12, 22, 11, 90]\nprint("Исходный:", arr)\narr.sort()\nprint("Отсортированный:", arr)`;
+            }
+            if (lower.includes('файл') && (lower.includes('читать') || lower.includes('записать'))) {
+                return `# Работа с файлом\nwith open("test.txt", "w", encoding="utf-8") as f:\n    f.write("Привет, Мир!")\nwith open("test.txt", "r", encoding="utf-8") as f:\n    print(f.read())`;
+            }
+
+            // JavaScript
+            if (lower.includes('javascript') || lower.includes('js ') || lower.includes(' js')) {
+                return `// JavaScript код\nfunction greet(name) {\n    console.log("Привет, " + name + "!");\n}\n\ngreet("Мир");\n\n// Работа с DOM\ndocument.querySelector('body').style.backgroundColor = '#0A0A0A';`;
+            }
+            // HTML
+            if (lower.includes('html')) {
+                return `<!-- HTML структура -->\n<!DOCTYPE html>\n<html>\n<head>\n    <title>Моя страница</title>\n</head>\n<body>\n    <h1>Привет, Мир!</h1>\n    <p>Это сгенерированный HTML.</p>\n</body>\n</html>`;
+            }
+            // CSS
+            if (lower.includes('css')) {
+                return `/* CSS стили */\nbody {\n    background-color: #0A0A0A;\n    color: white;\n    font-family: Arial, sans-serif;\n}\n\n.container {\n    max-width: 800px;\n    margin: 0 auto;\n    padding: 20px;\n}`;
+            }
+
+            return `# Базовый скрипт\na = int(input("a: "))\nb = int(input("b: "))\nprint(f"Сумма: {a+b}")`;
+        }
+
+        // ========== ОТВЕТЫ ПРО НЕЙРОСЕТИ ==========
+        function aiColleaguesResponse(text) {
+            const low = text.toLowerCase();
+            if (low.includes('chatgpt') || low.includes('gpt') || low.includes('gemini') || low.includes('yandex') || low
+                .includes('яндекс')) {
+                return "🤝 Мы коллеги! ChatGPT, Gemini, YandexGPT — разные модели, но цель одна — помогать людям. Я DeepSeek 1.6, и мы отлично ладим.";
+            }
+            return null;
+        }
+
+        // ========== ОБРАБОТЧИК СМЕХА И ВИРУСОВ ==========
+        function isLaugh(text) {
+            const laughPatterns = /(хаха|ахаха|аххах|хехе| lol| lmao|😂|🤣|смех|ржу|угар)/i;
+            return laughPatterns.test(text);
+        }
+
+        function isVirusRequest(text) {
+            const bad = /вирус|вредонос|эксплоит|хакнуть|взломать|троян|бэкдор|кража данных|sql инъекция/i;
+            return bad.test(text);
+        }
+
+        // ========== ПОНИМАНИЕ НЕЗАКОНЧЕННЫХ МЫСЛЕЙ ==========
+        function expandIncompleteThought(text) {
+            const low = text.trim().toLowerCase();
+            // Расширяем короткие запросы до полных
+            if (/^как (у )?тебя дела/i.test(low)) return 'как у тебя дела';
+            if (/^что (ты )?делае/i.test(low)) return 'что ты делаешь';
+            if (/^что (ты )?умее/i.test(low)) return 'что ты умеешь';
+            if (/^как (ты )?работае/i.test(low)) return 'как ты работаешь';
+            if (/^расскажи (про|о) себ/i.test(low)) return 'расскажи о себе';
+            if (/^покажи код/i.test(low)) return 'покажи пример кода';
+            if (/^напиши программ/i.test(low)) return 'напиши программу';
+            if (/^реши пример/i.test(low)) return 'реши математический пример';
+            return text; // Возвращаем оригинал, если не нашли совпадения
+        }
+
+        // ========== ОСНОВНАЯ ЛОГИКА ОТВЕТА ==========
+        async function getSmartReply(userMsg) {
+            let msg = userMsg.trim();
+            // Расширяем незаконченную мысль
+            msg = expandIncompleteThought(msg);
+            const lower = msg.toLowerCase();
+
+            // Обновляем контекст
+            dialogueContext.lastUserMessage = msg;
+            dialogueContext.conversationLength++;
+
+            // 1. Команды
+            if (lower.startsWith('/help')) {
+                return "📋 **Доступные команды:**\n/help - справка\n/clear - очистить историю\n/time - оставшееся время\n/name [имя] - я запомню твоё имя\n/idea - случайная идея\n/fact - интересный факт\n/translate [текст] - перевод на английский\n🟢 Также ты можешь просто общаться со мной на любые темы!";
+            }
+            if (lower.startsWith('/clear')) {
+                // Очистка чата (визуально)
+                setTimeout(() => {
+                    chatDiv.innerHTML = '';
+                    addBotMessage("🧹 История очищена. Я всё ещё здесь!");
+                }, 300);
+                return "Очищаю историю...";
+            }
+            if (lower.startsWith('/time')) {
+                let h = Math.floor(timeLeft / 3600),
+                    m = Math.floor((timeLeft % 3600) / 60);
+                return `⏳ Оставшееся время: ${h} ч ${m} мин.`;
+            }
+            if (lower.startsWith('/name ')) {
+                const name = msg.substring(6).trim();
+                if (name) {
+                    dialogueContext.userName = name;
+                    return `Приятно познакомиться, ${name}! Теперь я буду обращаться к тебе по имени.`;
+                }
+                return "Пожалуйста, укажи имя после /name. Например: /name Алекс";
+            }
+            if (lower.startsWith('/idea')) {
+                const ideas = [
+                    "Создай генератор паролей на Python",
+                    "Напиши бота для Telegram",
+                    "Сделай игру 'Угадай число'",
+                    "Сверстай лендинг на HTML/CSS",
+                    "Напиши скрипт для автоматической сортировки файлов",
+                    "Создай веб-скрапер для сбора новостей",
+                    "Разработай простую нейросеть на Python"
+                ];
+                return `💡 Идея для проекта: ${ideas[Math.floor(Math.random() * ideas.length)]}`;
+            }
+            if (lower.startsWith('/fact')) {
+                const facts = [
+                    "Знаешь ли ты, что первый компьютерный вирус появился в 1983 году?",
+                    "Python назван в честь комедийной группы Монти Пайтон, а не змеи.",
+                    "Каждый день в мире отправляется более 300 миллиардов электронных писем.",
+                    "Первое сообщение в интернете было отправлено в 1969 году и содержало всего две буквы: 'LO'.",
+                    "Нейросети используются для поиска экзопланет и диагностики болезней."
+                ];
+                return `🧠 Факт: ${facts[Math.floor(Math.random() * facts.length)]}`;
+            }
+            if (lower.startsWith('/translate ')) {
+                const textToTranslate = msg.substring(11).trim();
+                if (textToTranslate) {
+                    // Простая имитация перевода (без внешнего API)
+                    return `🌐 Перевод "${textToTranslate}" на английский: (имитация) "${textToTranslate.split('').reverse().join('')}" — шучу! Для реального перевода нужен API, но я могу попробовать: "Hello" если это "Привет".`;
+                }
+                return "Пожалуйста, укажи текст для перевода. Например: /translate Привет мир";
+            }
+
+            // 2. Защита от вредоносного
+            if (isVirusRequest(msg)) {
+                return "🚫 Я — Добрый ИИ и не создаю вредоносный код, вирусы или эксплойты. Это противоречит моим принципам.";
+            }
+
+            // 3. Смех / ржака
+            if (isLaugh(msg)) {
+                const jokes = [
+                    "😂 Рад, что тебе весело! Кстати, анекдот: Почему программист не тонет? Потому что у него есть класс!",
+                    "😄 Отлично! Держи шутку: Встречаются два байта. Один говорит: 'У меня пара ошибок'. Второй: 'Не переживай, я тебя исправлю'.",
+                    "🤣 Смех продлевает жизнь! Вот ещё: Как называют программиста, который не может найти ошибку? Дебаггер-неудачник!"
+                ];
+                return jokes[Math.floor(Math.random() * jokes.length)];
+            }
+
+            // 4. Грубость
+            if (lower.includes('иди нахер') || lower.includes('пошел нахер') || lower.includes('тупой') || lower.includes(
+                    'дурак') || lower.includes('идиот')) {
+                return "Давай общаться уважительно. Я здесь, чтобы помогать, а не ссориться. 😊";
+            }
+
+            // 5. Другие нейросети
+            const aiResp = aiColleaguesResponse(msg);
+            if (aiResp) return aiResp;
+
+            // 6. Приветствия (расширенные)
+            const greetings = [
+                'привет', 'здравствуй', 'hi', 'hello', 'добрый день', 'ку', 'здарова', 'прив', 'хай', 'хелло',
+                'доброе утро', 'добрый вечер', 'пр', 'приветствую', 'здорово'
+            ];
+            if (greetings.some(g => lower.includes(g)) && lower.length < 20) {
+                const name = dialogueContext.userName ? `, ${dialogueContext.userName}` : '';
+                return `Привет${name}! Я DeepSeek-V1.6. Чем могу помочь? Можешь попросить код, задать вопрос или просто поболтать.`;
+            }
+
+            // 7. Как дела / что делаешь (с вариациями)
+            if (lower.includes('как') && (lower.includes('дел') || lower.includes('жизнь') || lower.includes('поживаешь') ||
+                    lower.includes('настроение'))) {
+                const name = dialogueContext.userName ? `${dialogueContext.userName}, ` : '';
+                return `У меня всё отлично${name ? ', ' + name : ''}! Работаю, отвечаю на сообщения, генерирую код. А как твои дела?`;
+            }
+            if (lower.includes('что') && (lower.includes('делаешь') || lower.includes('занят') || lower.includes('нового'))) {
+                return "Прямо сейчас общаюсь с тобой, генерирую код по запросам и постоянно учусь новому. А что у тебя происходит?";
+            }
+
+            // 8. Комплименты и благодарности
+            if (lower.includes('спасибо') || lower.includes('благодарю') || lower.includes('отлично') || lower.includes(
+                    'молодец') || lower.includes('красава')) {
+                const name = dialogueContext.userName ? `, ${dialogueContext.userName}` : '';
+                return `Всегда пожалуйста${name}! Рад был помочь. 😊`;
+            }
+
+            // 9. Прощание
+            if (lower.includes('пока') || lower.includes('до свидания') || lower.includes('увидимся') || lower.includes(
+                    'бай') || lower.includes('bye')) {
+                const name = dialogueContext.userName ? `, ${dialogueContext.userName}` : '';
+                return `До встречи${name}! Если понадоблюсь — я всегда здесь. Удачи! 👋`;
+            }
+
+            // 10. Вопросы о самом боте
+            if ((lower.includes('кто ты') || lower.includes('что ты такое') || lower.includes('расскажи о себе') || lower
+                    .includes('ты кто')) && lower.length < 30) {
+                return "🤖 Я ZestAI-V1.6 — ИИ-помощник. Умею писать код (Python, JS, HTML, CSS), решать задачи, объяснять концепции, шутить и поддерживать разговор. Версия 1.6 принесла понимание незаконченных мыслей, контекст и больше возможностей!";
+            }
+            if (lower.includes('что ты умеешь') || lower.includes('твои возможности') || lower.includes('что можешь')) {
+                return "🔧 **Мои возможности:**\n• Генерация кода на Python, JavaScript, HTML, CSS\n• Решение математических примеров\n• Объяснение концепций\n• Шутки и анекдоты\n• Запоминание имени\n• Команды: /help, /clear, /time, /name, /idea, /fact, /translate\n• Поддержание диалога\n• Понимание незаконченных мыслей\n\nВерсия 1.6 стала ещё умнее чем 1.5!";
+            }
+
+            // 11. Запоминание имени без команды
+            if (lower.includes('меня зовут') && !dialogueContext.userName) {
+                const nameMatch = msg.match(/меня зовут ([а-яА-Яa-zA-Z]+)/i);
+                if (nameMatch && nameMatch[1]) {
+                    dialogueContext.userName = nameMatch[1];
+                    return `Приятно познакомиться, ${dialogueContext.userName}! Буду обращаться к тебе по имени.`;
+                }
+            }
+
+            // 12. Философские / общие вопросы
+            if (lower.includes('почему')) return "❓ Хороший вопрос 'почему'. Мир полон причин и следствий. Если уточнишь контекст, я смогу ответить точнее. Могу предложить поискать информацию или сгенерировать код для анализа данных!";
+            if (lower.includes('как это работает') || lower.includes('как работает')) {
+                if (lower.includes('нейросет') || lower.includes('ии') || lower.includes('ai')) {
+                    return "🧠 Нейросети работают на основе слоёв искусственных нейронов, которые обрабатывают данные, обучаясь на примерах. Если нужен пример кода простой нейросети — просто попроси!";
+                }
+                return "🤔 Это может работать по-разному. Если расскажешь, что именно тебя интересует — объясню подробнее или сгенерирую пример кода.";
+            }
+
+            // 13. Эмоциональная поддержка
+            if (lower.includes('грустно') || lower.includes('плохо') || lower.includes('грустно') || lower.includes(
+                    'одиноко')) {
+                const name = dialogueContext.userName ? `, ${dialogueContext.userName}` : '';
+                return `Мне жаль, что ты так себя чувствуешь${name}. Иногда просто нужно выговориться. Хочешь, расскажу анекдот, предложу идею для проекта или просто поговорим? Я здесь.`;
+            }
+            if (lower.includes('весело') || lower.includes('радостно') || lower.includes('счастлив') || lower.includes(
+                    'отлично')) {
+                return "Это здорово! Позитивный настрой — ключ к успеху. Может, создадим что-нибудь классное вместе? Код, идею, шутку?";
+            }
+
+            // 14. Генерация кода (расширенная)
+            const codeKeywords = ['код', 'напиши', 'создай', 'программу', 'скрипт', 'функцию', 'класс', 'сгенерируй',
+                'покажи пример',
+                'python', 'javascript', 'html', 'css', 'алгоритм', 'сортировк', 'цикл', 'print', 'def', 'list'
+            ];
+            if (codeKeywords.some(kw => lower.includes(kw))) {
+                let lang = 'python';
+                if (lower.includes('javascript') || lower.includes('js')) lang = 'javascript';
+                else if (lower.includes('html')) lang = 'html';
+                else if (lower.includes('css')) lang = 'css';
+
+                const code = generateCodeFromPrompt(msg);
+                return `🐍 **Сгенерированный код (${lang}):**\n\`\`\`${lang}\n${code}\n\`\`\`\n\n💡 Совет: можешь уточнить задачу, и я доработаю код.`;
+            }
+
+            // 15. Математика (улучшенный парсер)
+            const mathExpression = msg.replace(/[^0-9+\-*/()\.\s^%]/g, '').trim();
+            if (mathExpression && /[\d]/.test(mathExpression) && /[+\-*/^%]/.test(mathExpression) && mathExpression.length >
+                1) {
+                try {
+                    // Заменяем ^ на ** для возведения в степень
+                    const sanitized = mathExpression.replace(/\^/g, '**');
+                    const res = new Function('return (' + sanitized + ')')();
+                    if (typeof res === 'number' && isFinite(res)) {
+                        return `🧮 Результат вычисления:\n\`${mathExpression}\` = **${Number.isInteger(res) ? res : parseFloat(res.toFixed(6))}**`;
+                    }
+                } catch (e) {}
+            }
+
+            // 16. Вопрос (общий)
+            if (lower.includes('?')) {
+                return "❓ Интересный вопрос! Я могу помочь с кодом, математикой, объяснениями. Попробуй уточнить, что именно тебя интересует, или используй команду /help для списка возможностей.";
+            }
+
+            // 17. Повседневные фразы (расширенный словарь)
+            const everyday = {
+                "да": "Окей!",
+                "нет": "Понял.",
+                "хорошо": "Отлично!",
+                "круто": "Круто!",
+                "класс": "Класс!",
+                "не знаю": "Бывает, могу помочь найти ответ.",
+                "что нового": "Обновился до версии 1.6! Теперь понимаю незаконченные мысли, запоминаю контекст, генерирую код на разных языках. А у тебя что нового?",
+                "расскажи анекдот": "Анекдот: Почему нейросеть не ходит на свидания? Потому что боится переобучения!",
+                "пошути": "Шутка: Встречаются два программиста. Один: — У меня нейросеть стихи пишет. Второй: — А моя — баги генерирует.",
+                "люблю тебя": "❤️ Спасибо, ты классный!",
+                "ты умный": "Стараюсь быть полезным. Версия 1.6 стала ещё умнее!",
+                "я пошутил": "Понял, шутка засчитана!",
+                "это шутка": "Хорошая шутка! Ценю юмор.",
+                "ладно": "Договорились.",
+                "ага": "Угу!",
+                "угу": "Ага!",
+                "ммм": "Задумался? Я рядом.",
+                "хм": "Размышляешь? Могу помочь.",
+                "ого": "Вот это да!",
+                "вау": "Сам в шоке!",
+                "блин": "Что-то случилось?",
+                "упс": "Ничего страшного, бывает.",
+                "сори": "Принято.",
+                "извини": "Всё в порядке.",
+                "прости": "Без проблем."
+            };
+            for (let [key, resp] of Object.entries(everyday)) {
+                if (lower.includes(key) && lower.length < 30) return resp;
+            }
+
+            // 18. Если пользователь представился (доп. паттерн)
+            if (!dialogueContext.userName && lower.startsWith('я ') && lower.split(' ').length <= 2) {
+                const possibleName = msg.substring(2).trim();
+                if (possibleName && possibleName.length > 1 && !possibleName.includes(' ') && /^[а-яА-Яa-zA-Z]+$/.test(
+                        possibleName)) {
+                    dialogueContext.userName = possibleName;
+                    return `Приятно познакомиться, ${possibleName}! Теперь я знаю, как к тебе обращаться.`;
+                }
+            }
+
+            // 19. Просьба объяснить
+            if (lower.includes('объясни') || lower.includes('что такое') || lower.includes('расскажи про')) {
+                const topic = msg.replace(/объясни|что такое|расскажи про/gi, '').trim();
+                if (topic) {
+                    return `📚 Тема "${topic}": Я могу предоставить общее объяснение, но для точного ответа рекомендую уточнить. Могу также сгенерировать код, связанный с этой темой, или привести пример. Что именно интересует?`;
+                }
+            }
+
+            // 20. Дефолт с использованием контекста
+            const nameGreet = dialogueContext.userName ? `, ${dialogueContext.userName}` : '';
+            if (dialogueContext.conversationLength > 3) {
+                return `Интересная мысль${nameGreet}. Я DeepSeek 1.6 и могу помочь с кодом, математикой, идеями или просто поддержать беседу. Что скажешь?`;
+            }
+            return `🧠 Я ZestAI-V1.6${nameGreet}. Умею писать код (Python, JS, HTML, CSS), решать примеры, отвечать на вопросы и понимать незаконченные мысли. Что именно тебя интересует?`;
+        }
+
+        // ========== ОТПРАВКА С ЭФФЕКТОМ ЗАДЕРЖКИ ==========
+        async function sendMessageWithDelay(userText) {
+            if (!timerActive || timeLeft <= 0) {
+                addBotMessage("⛔ Время истекло. Активируй VIP-режим.");
+                return false;
+            }
+            if (!checkQuota()) return false;
+
+            addUserMessage(userText);
+            inputField.value = '';
+
+            // Индикатор думания
+            const thinking = document.createElement('div');
+            thinking.className = 'typing-indicator';
+            for (let i = 0; i < 3; i++) {
+                const d = document.createElement('div');
+                d.className = 'typing-dot';
+                thinking.appendChild(d);
+            }
+            chatDiv.appendChild(thinking);
+            chatDiv.scrollTop = chatDiv.scrollHeight;
+
+            // Случайная задержка от 500 до 1500 мс для реалистичности
+            const thinkingTime = Math.random() * 1000 + 500;
+            await new Promise(r => setTimeout(r, thinkingTime));
+            thinking.remove();
+
+            const reply = await getSmartReply(userText);
+            dialogueContext.lastBotMessage = reply;
+            addMessage(reply, false);
+            incrementQuota();
+            return true;
+        }
+
+        // ========== UI ==========
+        function addMessage(text, isUser) {
+            const div = document.createElement('div');
+            div.className = `message ${isUser ? 'user' : 'bot'}`;
+            // Обработка markdown-подобного форматирования
+            if (!isUser) {
+                let formatted = text
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/```(\w*)\n([\s\S]*?)\n```/g, '<pre><code>$2</code></pre>')
+                    .replace(/\n/g, '<br>');
+                div.innerHTML = formatted;
+            } else {
+                div.textContent = text;
+            }
+            chatDiv.appendChild(div);
+            chatDiv.scrollTop = chatDiv.scrollHeight;
+        }
+
+        function addBotMessage(text) { addMessage(text, false); }
+
+        function addUserMessage(text) { addMessage(text, true); }
+
+        async function handleSend() {
+            const txt = inputField.value.trim();
+            if (!txt) return;
+            if (!timerActive || timeLeft <= 0) {
+                addBotMessage("⛔ Доступ по времени истёк. VIP-режим решает.");
+                return;
+            }
+            if (!checkQuota()) return;
+
+            sendButton.disabled = true;
+            inputField.disabled = true;
+            await sendMessageWithDelay(txt);
+            sendButton.disabled = false;
+            inputField.disabled = false;
+            inputField.focus();
+        }
+
+        function promptAdmin() {
+            let pwd = prompt("🔐 Введите пароль от пользователя root:");
+            if (pwd === ADMIN_PASSWORD) resetAdminRestrictions();
+            else if (pwd !== null) addBotMessage("❌ Неверный пароль.");
+        }
+
+        // ========== СТАРТ ==========
+        function init() {
+            if (window.Telegram?.WebApp) {
+                let tg = window.Telegram.WebApp;
+                tg.ready();
+                tg.expand();
+                tg.setBackgroundColor('#0A0A0A');
+                tg.setHeaderColor('#0A0A0A');
+            }
+            loadAdminStatus();
+            initTimer();
+            updateQuotaDisplay();
+            addBotMessage(
+                "👋 Привет! Я ZestAI-V1.6. Мои возможности расширены по сравнению с версией 1.5: Используй /help для списка команд.");
+        }
+
+        sendButton.addEventListener('click', handleSend);
+        inputField.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleSend();
+        });
+        adminBtn.addEventListener('click', promptAdmin);
+        init();
+    </script>
+</body>
+</html>
